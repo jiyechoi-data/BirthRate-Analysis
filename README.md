@@ -2,16 +2,16 @@
 
 Birth Rate Analysis in South Korea
 
-Project Overview
 
+Project Overview
 This project analyzes the factors influencing birth rates across cities and districts in South Korea. Using various statistical methods such as Principal Component Analysis (PCA), Factor Analysis, Multidimensional Scaling (MDS), and Clustering, the study identifies key patterns and regional differences.
 
 
 Key Objectives
 
-Identify major factors influencing birth rates.
-Classify regions based on demographic and urban characteristics.
-Provide actionable insights for policymaking.
+- Identify major factors influencing birth rates.
+- Classify regions based on demographic and urban characteristics.
+- Provide actionable insights for policymaking.
 
 
 Features
