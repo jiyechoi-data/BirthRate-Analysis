@@ -1,0 +1,232 @@
+# Load Required Libraries ----
+library(ggplot2)
+library(cluster)
+library(factoextra)
+library(NbClust)
+
+# Load Data ----
+data <- read.csv("birth_data.csv")
+head(data)
+
+#Social Domain
+round(cor(birth[, c("Average_Age_at_First_Marriage_Female","Population_of_Marriageable_Age_Women","Population_Growth_Rate","EQ5D")]), 4)
+
+#Family Domain
+round(cor(birth[, c("Marriage_Rate","Divorce_Rate")]), 2)
+
+#Education Domain
+round(cor(birth[, c("Number_of_Kindergartens", "Number_of_Elementary Schools")]))
+
+#Welfare Domain
+round(cor(birth[, c("Number_of_Cultural_Facilities", "Number_of_Childcare_Facilities")]))
+
+#Economy Domain
+round(cor(birth[, c("Fiscal_Independence", "Fiscal_Autonomy")]))
+
+#Correlation Matrix ----
+corr_matrix <- round(cor(birth), 2)
+print(corr_matrix)
+
+# Scatterplot Matrix ----
+pairs(test, panel = function (x, y, ...) { 
+    points(x, y, ...)
+    abline(lm(y ~ x), col = 'red')
+}, cex = 1.5, pch = "*", bg = "blue",
+    diag.panel = panel.hist, cex.labels = 1, font.labels = 1)
+    
+panel.hist <- function(x, ...) 
+{
+   usr <- par("usr"); on.exit(par(usr))
+   par(usr = c(usr[1:2], 0, 1.5) )
+   h <- hist(x, plot = FALSE)
+   breaks <- h$breaks; nB <- length(breaks)
+   y <- h$counts; y <- y/max(y)
+   rect(breaks[-nB], 0, breaks[-1], y, col = "cyan", ...)
+}
+
+#QQplot ----
+layout(matrix(1:16, nc = 4)) 
+sapply(colnames(data), function(x) {
+        qqnorm(data[[x]], main = x, ) 
+        qqline(data[[x]])
+})
+
+# Chi-square Plot ----
+x <- birth
+cm <- colMeans(x)
+S <- cov(x)
+d <- apply(x, 1, function(x) {t(x-cm) %*% solve(S) %*% (x-cm)}) plot(qc <- qchisq((1:nrow(x) - 1/2) / nrow(x), df=7),
+    sd <- sort(d),
+    xlab = expression(paste(chi[7]^2, "Quantile")),
+    ylab = "Ordered distances", xlim = range(qc) * c(1, 1.1))
+oups <- which(rank(abs(qc - sd), ties = "random") > nrow(x) - 5) text(qc[oups], sd[oups] - 1.5, names(oups))
+abline(a=0, b=1)
+
+#Scatterplots by Variable Categories
+
+#family
+family <- data[, c('Crude Marriage Rate', 'Crude Divorce Rate')] 
+pairs(family, diag.panel=panel.hist,
+   panel=function(x,y){
+    data<-data.frame(cbind(x,y))
+    par(new=TRUE) 
+    den<-bkde2D(data,bandwidth=sapply(data,dpik)) 
+    contour(x=den$x1,y=den$x2,
+    z=den$fhat,axes=FALSE)
+})
+
+#education
+education<-data[, c('Number of Kindergartens
+','Number of Elementary Schools
+')] 
+pairs(education, diag.panel=panel.hist,
+  panel=function(x,y){
+    data<-data.frame(cbind(x,y))
+    par(new=TRUE) 
+    den<-bkde2D(data,bandwidth=sapply(data,dpik)) 
+    contour(x=den$x1,y=den$x2,
+    z=den$fhat,axes=FALSE)
+})
+
+#society
+society<- data[, c('Marriageable Age Women
+','Average Age at First Marriage','EQ5D','Population Growth Rate')] pairs(society, diag.panel=panel.hist,
+  panel=function(x,y){
+    data<-data.frame(cbind(x,y))
+    par(new=TRUE) 
+    den<-bkde2D(data,bandwidth=sapply(data,dpik)) 
+    contour(x=den$x1,y=den$x2,
+    z=den$fhat,axes=FALSE)
+})
+
+# welfare
+welfare<-data[, c('Number of Childcare Facilities','Number of Cultural Facilities')] 
+pairs(welfare, diag.panel=panel.hist,
+  panel=function(x,y){
+    data<-data.frame(cbind(x,y))
+    par(new=TRUE) 
+    den<-bkde2D(data,bandwidth=sapply(data,dpik)) 
+    contour(x=den$x1,y=den$x2,
+    z=den$fhat,axes=FALSE)
+})
+
+# economy
+economy<-data[, c('Fiscal Autonomy','Fiscal Independence')] 
+pairs(economy, diag.panel=panel.hist,
+  panel=function(x,y){
+    data<-data.frame(cbind(x,y))
+    par(new=TRUE) 
+    den<-bkde2D(data,bandwidth=sapply(data,dpik)) 
+    contour(x=den$x1,y=den$x2,
+    z=den$fhat,axes=FALSE)
+})
+
+#PCA
+birth = birth[-outcity,] 
+round(cor(birth),2)
+
+birth_corr = cor(birth) 
+data_pcacor=princomp(covmat=birth_corr) 
+summary(data_pcacor, loading=TRUE)
+
+birth_corr = cor(test) 
+data_pcacor=princomp(covmat=birth_corr) 
+summary(data_pcacor, loading=TRUE)
+
+#MDS
+(data_mds3 = isoMDS(D))
+x = data_mds3$points[, 1]
+y = data_mds3$points[, 2]
+lim = range(c(x, y)) * 1.2
+plot(x, y, xlab = "Coordinate 1", ylab = "Coordinate 2",
+, ylim = c(-50,50),type = "n")
+text(x, y, rownames(test), cex = 0.7,col = c("blue","black")[data$city])
+
+#Factor Analysis
+sapply(1:4, function(f)
+factanal(scale(data) ,factors=f , method="mle")$PVAL)
+
+(scores <- factanal(scale(data), factors = 4 method ="mle",scores = "regression")$scores)
+factanal(scale(data), factors = 3, method ="mle")
+
+birth_fit<-birth[,-c(1,7,8,13)] 
+birthfit_cor<-cor(test_fit) 
+sapply(1:4, function(f)
+    factanal(birthfit_cor ,factors=f , method="mle")$PVAL)
+
+scores<-factanal(scale(test_fit),factors=4,method='mle',scores='regression')$scores factanal(covmat=testfit_cor,factors=4,method='mle',n.obs=221)
+
+#Cluster Analysis
+birth = birth[, -1]
+X <- scale(birth[, names(birth)])
+dj <- dist(x)
+
+plot(cc <- hclust(dj, method = "single"), main = "single")
+plot(cc <- hclust(dj, method = "complete"), main = "complete")
+plot(cc <- hclust(dj, method = "average"), main = "average")
+
+pr <- prcomp(dj)$x[, 1:2]
+
+plot(pr, pch=(1:2)[cutree(cs, k=2)], col = c("red", "black")[test$city], xlim = range(pr) * c(0.9, 1.5))
+
+
+legend("topright", col = c("red", "red", "black", "black"), legend = c("1/no", "2/no", "1/yes", "2/yes"), pch = c(1:2, 1:2), title="Cluster/city", bty="n")
+
+
+#Kmeans clustering
+wssplot <- function(data, nc=15, seed=1234){ 
+ wss <- (nrow(data)-1)*sum(apply(data, 2, var)) 
+ for (i in 2:nc){
+    set.seed(seed)
+    wss[i] <- sum(kmeans(data, centers=i)$withinss)}
+    
+ plot(1:nc, wss, type="b", xlab="Number of Clusters", ylab="Within groups sum of squares")}
+ 
+wssplot(training.data)
+
+round( sapply(birth, var), digits=1)
+
+rge <- sapply(birth, function(x) diff(range(x))) 
+birth_s <- sweep(birth, 2, rge, FUN = "/") 
+round( sapply(birth_s, var), digits=5) 
+kmeans(birth_s, centers = 2)$centers * rge
+
+birth_pca <- prcomp(birth_s)
+plot(birth_pca$x[, 1:2], pch = kmeans(birth_s, centers = 2)$cluster)
+
+#PAM
+nc <- NbClust(training.data, min.nc=2, max.nc=15, method="kmeans") par(mfrow=c(1,1))
+barplot(table(nc$Best.n[1,]),
+ xlab="Numer of Clusters", ylab="Number of Criteria", 
+ main="Number of Clusters Chosen")
+ #Standardization
+data2 = data[, -14] 
+names(data2)
+data3 <- scale(data2) 
+summary(data3)
+
+#Model Building
+fit.km=kmeans(data3, 3, nstart=25) 
+fit.km$cluster
+fit.km$size
+fit.km$centers
+
+#Cluster Validation
+fit$cluster <-as.factor(fit.km$cluster)
+
+#Principal Component
+dj <- dist(data3)
+pr <- prcomp(dj)$x[, 1:2]
+
+#Cluster
+library(ggplot2)
+set.seed(1234)
+fit.pam <- pam(data[-1], k=3, stand=TRUE)
+fit.pam$medoids
+clusplot(fit.pam, main="Bivariate Cluster Plot")
+fit <-pam(data3,k=3)
+data3$clustering <- factor(fit$clustering)
+ggplot(data=data3, aes(x=V1,y=V2,color=clustering, shape=clustering))+
+    geom_point() + ggtitle("Clustering of Bivariate Normal Data")
+
+
